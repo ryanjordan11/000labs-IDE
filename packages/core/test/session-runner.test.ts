@@ -599,6 +599,18 @@ const scenario = (
     }),
   )
 
+const scenarioSkip = (
+  name: string,
+  body: (s: Scenario) => Effect.gen.Return<void, unknown, Layer.Success<typeof layer> | Scope.Scope>,
+) =>
+  it.effect.skip(
+    name,
+    Effect.gen(function* () {
+      const s = yield* setup
+      return yield* body(s)
+    }),
+  )
+
 // Nominal retry gaps: exponential from 2s capped at 10s, for 10 retries.
 const RETRY_GAPS = [2_000, 4_000, 8_000, ...Array<number>(7).fill(10_000)]
 // Longest possible gap per retry (+20% jitter); advancing the clock by these always fires the retry.
@@ -979,7 +991,7 @@ const watchRename = Effect.fnUntraced(function* (sessionID: Session.ID) {
 })
 
 describe("SessionRunnerLLM", () => {
-  scenario.skip("generates the title while the first model step is still running", function* (s) {
+  scenarioSkip("generates the title while the first model step is still running", function* (s) {
     yield* prepareTitleGeneration
 
     yield* s.admit("First prompt")
@@ -1005,7 +1017,7 @@ describe("SessionRunnerLLM", () => {
     expect((yield* s.session.get(sessionID)).title).toBe("Manual title")
   })
 
-  scenario.skip("coalesces title generation while a request is active", function* (s) {
+  scenarioSkip("coalesces title generation while a request is active", function* (s) {
     yield* prepareTitleGeneration
 
     const titleStarted = yield* Deferred.make<void>()
@@ -1038,7 +1050,7 @@ describe("SessionRunnerLLM", () => {
     }).pipe(Effect.ensuring(Deferred.succeed(releaseTitle, undefined)))
   })
 
-  scenario.skip("retries title generation from the first prompt after title and execution failures", function* (s) {
+  scenarioSkip("retries title generation from the first prompt after title and execution failures", function* (s) {
     yield* prepareTitleGeneration
 
     yield* s.admit("First prompt")
