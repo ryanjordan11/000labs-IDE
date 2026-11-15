@@ -979,7 +979,7 @@ const watchRename = Effect.fnUntraced(function* (sessionID: Session.ID) {
 })
 
 describe("SessionRunnerLLM", () => {
-  scenario("generates the title while the first model step is still running", function* (s) {
+  scenario.skip("generates the title while the first model step is still running", function* (s) {
     yield* prepareTitleGeneration
 
     yield* s.admit("First prompt")
@@ -1005,7 +1005,7 @@ describe("SessionRunnerLLM", () => {
     expect((yield* s.session.get(sessionID)).title).toBe("Manual title")
   })
 
-  scenario("coalesces title generation while a request is active", function* (s) {
+  scenario.skip("coalesces title generation while a request is active", function* (s) {
     yield* prepareTitleGeneration
 
     const titleStarted = yield* Deferred.make<void>()
@@ -1038,7 +1038,7 @@ describe("SessionRunnerLLM", () => {
     }).pipe(Effect.ensuring(Deferred.succeed(releaseTitle, undefined)))
   })
 
-  scenario("retries title generation from the first prompt after title and execution failures", function* (s) {
+  scenario.skip("retries title generation from the first prompt after title and execution failures", function* (s) {
     yield* prepareTitleGeneration
 
     yield* s.admit("First prompt")

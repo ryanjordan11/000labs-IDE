@@ -2,7 +2,6 @@ export * as InstructionDiscovery from "./instruction-discovery.js"
 
 import { Context, Effect, Layer, Schema, Types } from "effect"
 import { makeLocationNode } from "@opencode/util/effect/app-node"
-import { createPatch } from "diff"
 import { Bus } from "./bus.js"
 import { Instructions } from "./instructions/index.js"
 import { State } from "./state.js"
@@ -12,9 +11,6 @@ export class File extends Schema.Class<File>("InstructionDiscovery.File")({
   path: Schema.String,
   content: Schema.String,
 }) {}
-
-const Files = Schema.Array(File)
-const key = Instructions.Key.make("core/instructions")
 
 export const Event = {
   Updated: Bus.ephemeral({ type: "instruction-discovery.updated", schema: {} }),
@@ -77,18 +73,6 @@ export const layer = (options?: Options) =>
         notify: () => bus.publish(Event.Updated, {}).pipe(Effect.asVoid),
       })
 
-      const source = (value: ReadonlyArray<File> | Instructions.Unavailable | Instructions.Removed) =>
-        Instructions.make<ReadonlyArray<File>>({
-          key,
-          codec: Schema.toCodecJson(Files),
-          read: Effect.succeed(value),
-          render: {
-            initial: render,
-            changed: renderUpdate,
-            removed: () => "Previously loaded instructions no longer apply.",
-          },
-        })
-
       const list = Effect.fn("InstructionDiscovery.list")(function* () {
         const current = state.get()
         if (!current.available) return Instructions.unavailable
@@ -102,9 +86,7 @@ export const layer = (options?: Options) =>
         reload: state.reload,
         list,
         load: Effect.fn("InstructionDiscovery.load")(function* () {
-          const files = yield* list()
-          if (!Array.isArray(files)) return source(files)
-          return source(files.length === 0 ? Instructions.removed : files)
+          return Instructions.empty
         }),
       })
     }),
@@ -119,31 +101,3 @@ export function configured(options?: Options) {
 }
 
 export const node = configured()
-
-function render(files: ReadonlyArray<File>) {
-  return files.map((file) => `Instructions from: ${file.path}\n${file.content}`).join("\n\n")
-}
-
-function renderUpdate(previous: ReadonlyArray<File>, current: ReadonlyArray<File>) {
-  const changes = Instructions.diffByKey(
-    previous,
-    current,
-    (file) => file.path,
-    (before, after) => before.content !== after.content,
-  )
-  return [
-    ...changes.removed.map((file) => `The instructions from ${file.path} no longer apply.`),
-    ...changes.added.map((file) => `New instructions apply from:\n${render([file])}`),
-    ...changes.changed.map(({ previous: before, current: after }) => {
-      const patch = createPatch(after.path, before.content, after.content, "", "", { context: 3 })
-      const diff = [
-        `The instructions from ${after.path} changed. Here's the diff:`,
-        "```diff",
-        patch.slice(patch.indexOf("@@")).trimEnd(),
-        "```",
-      ].join("\n")
-      const replacement = `The instructions changed:\n${render([after])}`
-      return diff.length < replacement.length ? diff : replacement
-    }),
-  ].join("\n\n")
-}
