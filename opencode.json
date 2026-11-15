@@ -1,0 +1,37 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "build",
+  "agents": {
+    "build-agent": {
+      "description": "Build Agent"
+    },
+    "plan-agent": {
+      "description": "Plan Agent"
+    },
+    "chat-agent": {
+      "description": "Chat Agent",
+      "system": "You are the Chat Agent. Answer the user's question directly. Do not use any tools. Do not plan, build, or execute anything. Be concise and clear. No jargon unless the user uses it.",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "memory-agent": {
+      "description": "Memory Agent"
+    },
+    "source-agent": {
+      "description": "Source Agent"
+    },
+    "writer-agent": {
+      "description": "Writer Agent"
+    },
+    "observer-agent": {
+      "description": "Observer Agent"
+    },
+    "number-two": {
+      "description": "Number Two — Co-Architect"
+    },
+    "architect": {
+      "description": "User — Architect"
+    }
+  }
+}
